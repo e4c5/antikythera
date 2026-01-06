@@ -1327,12 +1327,13 @@ public class AbstractCompiler {
         }
 
         StringBuilder result = new StringBuilder();
-        result.append(Character.toLowerCase(camelCase.charAt(0)));
 
-        for (int i = 1; i < camelCase.length(); i++) {
+        for (int i = 0; i < camelCase.length(); i++) {
             char ch = camelCase.charAt(i);
             if (Character.isUpperCase(ch)) {
-                result.append('_');
+                if (i > 0 && Character.isLowerCase(camelCase.charAt(i - 1))) {
+                    result.append('_');
+                }
                 result.append(Character.toLowerCase(ch));
             } else {
                 result.append(ch);

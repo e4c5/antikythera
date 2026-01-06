@@ -61,7 +61,6 @@ public class BaseRepositoryParser extends AbstractCompiler {
     public static final String WHERE = "WHERE";
     protected static final Logger logger = LoggerFactory.getLogger(BaseRepositoryParser.class);
     // Pre-compiled patterns to avoid ReDoS and improve performance
-    protected static final Pattern CAMEL_TO_SNAKE_PATTERN = Pattern.compile("([a-z])([A-Z]+)");
     private static final Pattern HQL_FROM_PATTERN = Pattern.compile("\\bFROM\\s+[A-Z][a-zA-Z0-9]+\\s+[a-z]\\b");
     private static final Pattern HQL_ALIAS_PATTERN = Pattern.compile("\\b[a-z]\\.[A-Z][a-zA-Z0-9]+");
     private static final Pattern SQL_COUNT_PATTERN = Pattern.compile("COUNT\\(\\*\\)", Pattern.CASE_INSENSITIVE);
@@ -195,13 +194,16 @@ public class BaseRepositoryParser extends AbstractCompiler {
 
     /**
      * Converts the fields in an Entity to snake case which is the usual pattern for
-     * columns
+     * columns.
+     * Delegates to AbstractCompiler.camelToSnakeCase(String) for centralized logic.
      *
      * @param str A camel cased variable
      * @return a snake cased variable
+     * @deprecated Use {@link AbstractCompiler#camelToSnakeCase(String)} instead.
      */
+    @Deprecated
     public static String camelToSnake(String str) {
-        return CAMEL_TO_SNAKE_PATTERN.matcher(str).replaceAll("$1_$2").toLowerCase();
+        return AbstractCompiler.camelToSnakeCase(str);
     }
 
     /**
