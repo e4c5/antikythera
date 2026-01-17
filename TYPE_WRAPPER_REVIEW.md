@@ -102,12 +102,35 @@ public class TypeWrapper {
 | **Clarity** | **High**: Removes an extra abstraction layer; uses standard JavaParser types. | **Medium**: Retains a custom wrapper that developers must learn. |
 | **Migration** | "Big Bang" or widespread changes. | Incremental. The wrapper can eventually be deprecated. |
 
-### 4.3 Recommendation
-**Strategy B (Encapsulation)** is likely the better short-term approach. It allows the project to leverage the power of `ResolvedType` (better generics handling, unified source/binary view) without the risk of a massive refactor.
+### 4.3 Recommendation: Evolutionary Strategy
+**Strategy B (Encapsulation)** is the recommended approach. It allows us to:
+1.  **Keep the existing API**: Legacy methods (`getClazz`, `getType`, etc.) remain, preventing breaking changes in `AbstractCompiler` or `Resolver`.
+2.  **Leverage ResolvedType**: The internal implementation delegates to `ResolvedType` for improved accuracy.
+3.  **Add New Functionality**: We can expose new methods that provide capabilities previously difficult to implement (e.g., proper generic type checks).
 
-1.  **Refactor `TypeWrapper`**: Change internals to use `ResolvedType`.
-2.  **Delegate**: Implement `isAssignableFrom`, `isController`, etc., using the solver logic.
-3.  **Legacy Support**: Keep `getType()` and `getClazz()` methods but implement them by deriving the result from the `ResolvedType` (or falling back if resolution fails).
+#### Examples of New Functionality
+By holding the `ResolvedType`, we can add methods like:
+
+```java
+// Expose the underlying resolved type for advanced usage
+public ResolvedType getResolvedType() {
+    return this.resolvedType;
+}
+
+// Better type checking using JavaParser's logic
+public boolean isAssignableBy(TypeWrapper other) {
+    if (this.resolvedType != null && other.resolvedType != null) {
+        return this.resolvedType.isAssignableBy(other.resolvedType);
+    }
+    // Fallback to legacy logic...
+}
+
+// Check for specific annotations easily
+public boolean hasAnnotation(String qualifiedName) {
+    return this.resolvedType.isReferenceType() &&
+           this.resolvedType.asReferenceType().hasAnnotation(qualifiedName);
+}
+```
 
 ## 5. Feasibility and Benefits
 
