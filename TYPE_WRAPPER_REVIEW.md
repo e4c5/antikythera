@@ -64,7 +64,52 @@ public Optional<TypeDeclaration<?>> toAst(ResolvedType resolvedType) {
 
 *Note: `ResolvedReferenceTypeDeclaration.toAst()` returns `Optional<Node>`, so a cast/check is required.*
 
-## 4. Feasibility and Benefits
+## 4. Alternative Strategy: Encapsulation (Refactoring TypeWrapper)
+
+An alternative to replacing `TypeWrapper` everywhere is to **refactor `TypeWrapper` to use `ResolvedType` internally**. This allows us to keep the existing API stable while modernizing the underlying implementation.
+
+### 4.1 Concept
+Instead of holding separate `TypeDeclaration<?>` (source) and `Class<?>` (binary) fields, `TypeWrapper` would hold a single `ResolvedReferenceTypeDeclaration` (or `ResolvedType`).
+
+```java
+public class TypeWrapper {
+    // The single source of truth
+    private final ResolvedType resolvedType;
+
+    // Computed or lazily loaded on demand
+    public String getFullyQualifiedName() {
+        return resolvedType.describe();
+    }
+
+    public boolean isController() {
+        // Check annotations on resolvedType
+        return resolvedType.asReferenceType().hasAnnotation(...)
+    }
+
+    public TypeDeclaration<?> getType() {
+        // Convert to AST on demand (as described in section 3.2)
+        return toAst(resolvedType).orElse(null);
+    }
+}
+```
+
+### 4.2 Comparison: Replacement vs. Encapsulation
+
+| Feature | Strategy A: Replacement (Remove TypeWrapper) | Strategy B: Encapsulation (Keep TypeWrapper) |
+| :--- | :--- | :--- |
+| **Code Impact** | **High**: Requires changes in `AbstractCompiler`, `Resolver`, `DepSolver`, `GraphNode`. | **Low**: Changes mostly confined to `TypeWrapper.java`. |
+| **Risk** | **Medium**: Breaking changes in multiple core files. | **Low**: Preserves existing API contracts. |
+| **Clarity** | **High**: Removes an extra abstraction layer; uses standard JavaParser types. | **Medium**: Retains a custom wrapper that developers must learn. |
+| **Migration** | "Big Bang" or widespread changes. | Incremental. The wrapper can eventually be deprecated. |
+
+### 4.3 Recommendation
+**Strategy B (Encapsulation)** is likely the better short-term approach. It allows the project to leverage the power of `ResolvedType` (better generics handling, unified source/binary view) without the risk of a massive refactor.
+
+1.  **Refactor `TypeWrapper`**: Change internals to use `ResolvedType`.
+2.  **Delegate**: Implement `isAssignableFrom`, `isController`, etc., using the solver logic.
+3.  **Legacy Support**: Keep `getType()` and `getClazz()` methods but implement them by deriving the result from the `ResolvedType` (or falling back if resolution fails).
+
+## 5. Feasibility and Benefits
 
 ### Benefits
 1.  **Standardization**: Uses the library's native mechanism for type resolution, reducing custom maintenance burden.
@@ -74,35 +119,27 @@ public Optional<TypeDeclaration<?>> toAst(ResolvedType resolvedType) {
 ### Feasibility
 The migration is highly feasible because `AbstractCompiler` already sets up the `JavaSymbolSolver`. The codebase is essentially re-implementing what `JavaSymbolSolver` does but with less feature completeness regarding generics and type inference.
 
-## 5. Implementation Plan
+## 6. Implementation Plan
 
-The migration should be done in phases to minimize disruption.
+The migration should be done in phases to minimize disruption. Based on the recommendation in Section 4, the **Encapsulation Strategy** is prioritized.
 
-### Phase 1: Utility Methods Replacement
-Refactor `TypeWrapper`'s specific boolean flags (`isController`, `isService`, etc.) into a utility class that operates on `ResolvedReferenceTypeDeclaration`.
+### Phase 1: Introduction of ResolvedType to TypeWrapper
+- Add a `ResolvedType` field to `TypeWrapper`.
+- Update constructors or `AbstractCompiler` logic to populate this field using `JavaSymbolSolver`.
 
-```java
-public static boolean isController(ResolvedReferenceTypeDeclaration decl) {
-    return decl.hasAnnotation("org.springframework.stereotype.Controller") ||
-           decl.hasAnnotation("org.springframework.web.bind.annotation.RestController");
-}
-```
+### Phase 2: Internal Refactoring
+- Modify methods like `getFullyQualifiedName()`, `isAssignableFrom()`, and boolean checks (`isController`) to use the `ResolvedType` field if available.
+- Fall back to legacy logic (AST/Reflection) only if `ResolvedType` is null (e.g., in edge cases where resolution fails).
 
-### Phase 2: AbstractCompiler Refactoring
-Modify `AbstractCompiler` to return `ResolvedType` or `ResolvedReferenceTypeDeclaration` instead of `TypeWrapper`.
-- Replace `findType` to use `symbolResolver.calculateType(node)` or `typeSolver.solveType(name)`.
-- Remove `detectTypeWithClassLoaders` logic in favor of the configured `ReflectionTypeSolver`.
+### Phase 3: Deprecation of Legacy Fields
+- Mark `TypeDeclaration<?> type` and `Class<?> clazz` as deprecated within `TypeWrapper`.
+- Lazily derive them from `ResolvedType` when accessed via getters.
 
-### Phase 3: Resolver and GraphNode Updates
-Update `Resolver` and `GraphNode` to work with `ResolvedType`.
-- Update `GraphNode.inherit` to use `ResolvedReferenceTypeDeclaration.getAllAncestors()`.
-- Update `Resolver` to use `ResolvedType` for field and expression types.
+### Phase 4: Gradual API Migration
+- Introduce new methods in `AbstractCompiler` that return `ResolvedType` directly.
+- Update call sites (`Resolver`, `DepSolver`) to use these new methods and stop unwrapping/wrapping `TypeWrapper` where unnecessary.
 
-### Phase 4: Deprecate and Remove TypeWrapper
-Once all usages are migrated, remove the `TypeWrapper` class.
-
-## 6. Risks and Mitigations
-
+## 7. Risks and Mitigations
 - **Reflection Access**: Some parts of the code might specifically need the `java.lang.Class` object (e.g., for instantiation or deeper reflection not supported by JavaParser).
     - *Mitigation*: `ResolvedReferenceTypeDeclaration` usually allows access to the underlying reflection object if it is reflection-based. For source-based types, we generally shouldn't need the `Class` object during analysis.
 - **Performance**: `JavaSymbolSolver` can be slower than simple name matching.
@@ -110,5 +147,5 @@ Once all usages are migrated, remove the `TypeWrapper` class.
 - **Custom Logic**: `TypeWrapper.isAssignableFrom` has some "fuzzy" logic for matching.
     - *Mitigation*: Verify if `ResolvedType.isAssignableBy` covers all cases. Strict type checking is generally better, but we must ensure we don't break loose matching if it was intentional for "best effort" analysis.
 
-## 7. Conclusion
-Replacing `TypeWrapper` with `ResolvedType` is a recommended architectural improvement. It aligns the project with the standard patterns of the JavaParser library and improves the robustness of type analysis.
+## 8. Conclusion
+Moving to `ResolvedType` is a necessary step for the project's maturity. While a full replacement is the ideal end state, the **Encapsulation Strategy** (refactoring `TypeWrapper` to use `ResolvedType` internally) offers a safer, incremental path. It allows the project to benefit from robust type resolution immediately while deferring the cost of a system-wide refactoring.
