@@ -157,25 +157,57 @@ public boolean hasAnnotation(String qualifiedName) {
 ## 6. Feasibility
 The migration is highly feasible because `AbstractCompiler` already sets up the `JavaSymbolSolver`. The codebase is currently re-implementing much of what `JavaSymbolSolver` does natively. Transitioning to the native solver will reduce code debt and improve reliability.
 
-## 7. Implementation Plan
+## 7. Detailed Implementation Plan
 
 The migration should be done in phases to minimize disruption.
 
-### Phase 1: Introduction of ResolvedType to TypeWrapper
-- Add a `ResolvedType` field to `TypeWrapper`.
-- Update constructors or `AbstractCompiler` logic to populate this field using `JavaSymbolSolver` whenever possible.
+### Phase 1: Foundation (TypeWrapper & AbstractCompiler)
+In this phase, we update `TypeWrapper` to support `ResolvedType` and modify `AbstractCompiler` to populate it.
 
-### Phase 2: Internal Refactoring
-- Modify methods like `getFullyQualifiedName()`, `isAssignableFrom()`, and boolean checks (`isController`) to use the `ResolvedType` field if available.
-- Implement the "fallback" logic: if `ResolvedType` is null (e.g., resolution failed), continue using the legacy AST/Reflection fields. This ensures 100% backward compatibility during the transition.
+*   **`sa.com.cloudsolutions.antikythera.generator.TypeWrapper`**
+    *   Add `private ResolvedType resolvedType;` field.
+    *   Add a new constructor: `public TypeWrapper(ResolvedType resolvedType)`.
+    *   Add `public ResolvedType getResolvedType()`.
 
-### Phase 3: Deprecation of Legacy Fields
-- Mark `TypeDeclaration<?> type` and `Class<?> clazz` as deprecated within `TypeWrapper`.
-- Change their getters (`getType()`, `getClazz()`) to lazily derive values from `ResolvedType` where possible.
+*   **`sa.com.cloudsolutions.antikythera.parser.AbstractCompiler`**
+    *   Update `findType` and `detectTypeWithClassLoaders` to attempt `JavaSymbolSolver` resolution first.
+    *   When creating new `TypeWrapper` instances, pass the `ResolvedType` if available.
 
-### Phase 4: API Modernization
-- Introduce new methods in `AbstractCompiler` that work directly with `ResolvedType`.
-- Update call sites (`Resolver`, `DepSolver`) to prefer the new methods (`getResolvedType()`) over legacy accessors.
+### Phase 2: Internal Refactoring (Delegation)
+Update `TypeWrapper` methods to use `resolvedType` as the primary source of truth, falling back to legacy fields only if necessary.
+
+*   **`sa.com.cloudsolutions.antikythera.generator.TypeWrapper`**
+    *   Refactor `getFullyQualifiedName()`: delegate to `resolvedType.describe()`.
+    *   Refactor `isController`, `isService`, `isComponent`, `isEntity`: delegate to `resolvedType.asReferenceType().hasAnnotation(...)`.
+    *   Refactor `isAssignableFrom(TypeWrapper other)`: delegate to `resolvedType.isAssignableBy(other.resolvedType)`.
+
+### Phase 3: Consumer Migration (Internal APIs)
+Update core internal consumers to utilize the `ResolvedType` capabilities for better accuracy, especially regarding generics and imports.
+
+*   **`sa.com.cloudsolutions.antikythera.depsolver.Resolver`**
+    *   Update `resolveThisFieldAccess`: Retrieve `ResolvedType` from the wrapper to determine the field type more accurately.
+    *   Update `resolveField`: Use `ResolvedType` to check for field existence and type.
+
+*   **`sa.com.cloudsolutions.antikythera.parser.ImportUtils`**
+    *   Refactor `addImport`: Remove manual package checking. Use `resolvedType.describe()` to decide if an import is needed.
+
+*   **`sa.com.cloudsolutions.antikythera.depsolver.BeanDependencyGraph`**
+    *   Update `isSpringBean`, `isConfiguration`: These methods iterate over `AntikytheraRunTime.getResolvedTypes()`. They will automatically benefit from Phase 2 changes. No specific code changes might be needed here if `TypeWrapper.isService()` etc. are updated correctly.
+
+### Phase 4: Clean Up & Deprecation
+Once confidence is high, mark legacy fields as deprecated and lazily populate them.
+
+*   **`sa.com.cloudsolutions.antikythera.generator.TypeWrapper`**
+    *   Mark `type` and `clazz` fields as `@Deprecated`.
+    *   Update `getType()` and `getClazz()` to derive values from `resolvedType` (using the logic in section 3.2 and 3.3) if the fields are null.
+
+### Components with "No Changes Needed"
+The following components primarily pass `TypeWrapper` around or use its high-level boolean checks. If Phase 2 is done correctly (delegation), these classes require **no code changes**:
+
+*   `sa.com.cloudsolutions.antikythera.evaluator.AntikytheraRunTime` (Just stores the wrappers)
+*   `sa.com.cloudsolutions.antikythera.evaluator.Evaluator` and subclasses (Relies on `TypeWrapper` API)
+*   `sa.com.cloudsolutions.antikythera.generator.UnitTestGenerator`
+*   `sa.com.cloudsolutions.antikythera.parser.converter.*` (Entity conversions likely rely on `isEntity` and annotation checks, which will be handled internally by Phase 2).
 
 ## 8. Risks and Mitigations
 
