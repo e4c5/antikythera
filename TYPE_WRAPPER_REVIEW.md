@@ -201,13 +201,43 @@ Once confidence is high, mark legacy fields as deprecated and lazily populate th
     *   Mark `type` and `clazz` fields as `@Deprecated`.
     *   Update `getType()` and `getClazz()` to derive values from `resolvedType` (using the logic in section 3.2 and 3.3) if the fields are null.
 
-### Components with "No Changes Needed"
-The following components primarily pass `TypeWrapper` around or use its high-level boolean checks. If Phase 2 is done correctly (delegation), these classes require **no code changes**:
+### Usage Inventory & Migration Strategy
 
-*   `sa.com.cloudsolutions.antikythera.evaluator.AntikytheraRunTime` (Just stores the wrappers)
-*   `sa.com.cloudsolutions.antikythera.evaluator.Evaluator` and subclasses (Relies on `TypeWrapper` API)
-*   `sa.com.cloudsolutions.antikythera.generator.UnitTestGenerator`
-*   `sa.com.cloudsolutions.antikythera.parser.converter.*` (Entity conversions likely rely on `isEntity` and annotation checks, which will be handled internally by Phase 2).
+A comprehensive analysis of the codebase reveals that `TypeWrapper` is used in approximately 38 files. Below is the categorization of these usages into the migration phases.
+
+#### Group A: Core Infrastructure (Phase 1 & 2)
+These classes define or instantiate `TypeWrapper`. They must be migrated first to support `ResolvedType`.
+
+*   **`sa.com.cloudsolutions.antikythera.generator.TypeWrapper`**: The target class itself.
+*   **`sa.com.cloudsolutions.antikythera.parser.AbstractCompiler`**: The primary factory. Needs to populate `resolvedType` in `TypeWrapper`.
+*   **`sa.com.cloudsolutions.antikythera.evaluator.AntikytheraRunTime`**: The registry. No changes needed to the class itself, but the objects it stores will change internals.
+
+#### Group B: High-Priority Consumers (Phase 3)
+These classes perform complex type logic (field resolution, import management) and should be updated to leverage `ResolvedType` directly for accuracy.
+
+*   **`sa.com.cloudsolutions.antikythera.depsolver.Resolver`**: Heavy user for field access and scoped name resolution.
+*   **`sa.com.cloudsolutions.antikythera.parser.ImportUtils`**: Logic for adding imports is redundant with `ResolvedType`.
+*   **`sa.com.cloudsolutions.antikythera.depsolver.GraphNode`**: Uses `TypeWrapper` for inheritance checks (`inherit`) and field copying. Should ideally use `ResolvedReferenceTypeDeclaration`.
+*   **`sa.com.cloudsolutions.antikythera.depsolver.DependencyAnalyzer`**: Relies on `Resolver` and `GraphNode`.
+
+#### Group C: Evaluators & Converters (No Changes Needed / Low Priority)
+These classes mostly treat `TypeWrapper` as an opaque token or check simple properties (`isService`, `isEntity`). The "Evolutionary Strategy" (delegation) ensures these continue to work without modification.
+
+*   **`sa.com.cloudsolutions.antikythera.evaluator.SpringEvaluator`**: Checks `isSpringBean`, `isConfiguration`. Will work automatically via Phase 2 delegation.
+*   **`sa.com.cloudsolutions.antikythera.evaluator.MockingEvaluator`**: Resolves types to check for mocks.
+*   **`sa.com.cloudsolutions.antikythera.evaluator.functional.FunctionalConverter`**: Resolves types for FP conversions.
+*   **`sa.com.cloudsolutions.antikythera.parser.converter.EntityMappingResolver`**: Iterates types to build metadata.
+*   **`sa.com.cloudsolutions.antikythera.generator.UnitTestGenerator`**: High-level orchestration.
+*   **`sa.com.cloudsolutions.antikythera.generator.BaseRepositoryQuery`** & **`RepositoryQuery`**: Use wrappers to inspect repository interfaces.
+
+#### Group D: Minor/Transitive Usages (No Changes Needed)
+*   `sa.com.cloudsolutions.antikythera.evaluator.AKBuddy`
+*   `sa.com.cloudsolutions.antikythera.evaluator.ControlFlowEvaluator`
+*   `sa.com.cloudsolutions.antikythera.evaluator.DummyArgumentGenerator`
+*   `sa.com.cloudsolutions.antikythera.evaluator.InnerClassEvaluator`
+*   `sa.com.cloudsolutions.antikythera.evaluator.Scope` & `ScopeChain`
+*   `sa.com.cloudsolutions.antikythera.evaluator.mock.MockingRegistry`
+*   `sa.com.cloudsolutions.antikythera.parser.MCEWrapper`
 
 ## 8. Risks and Mitigations
 
