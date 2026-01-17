@@ -78,7 +78,52 @@ public Optional<TypeDeclaration<?>> toAst(ResolvedType resolvedType) {
 
 *Note: `ResolvedReferenceTypeDeclaration.toAst()` returns `Optional<Node>`, so a cast/check is required.*
 
-## 4. Benefits of Evolutionary Strategy
+### 3.3 Handling Compiled Classes (Libraries)
+
+When dealing with types from external libraries (JARs), `JavaSymbolSolver` typically uses `ReflectionClassDeclaration` (or `JarTypeSolver` variants). Unlike AST-based declarations, these do not have source code attached.
+
+To extract the underlying `java.lang.Class` (which `TypeWrapper` currently holds in its `clazz` field) from a `ResolvedType`:
+
+1.  Check if the declaration is an instance of `ReflectionClassDeclaration`.
+2.  Unfortunately, `ReflectionClassDeclaration` does not publicly expose the underlying `Class` object.
+3.  **Solution**: Use the fully qualified name to load the class via reflection.
+
+```java
+public Class<?> toClass(ResolvedType resolvedType) {
+    if (resolvedType.isReferenceType()) {
+        String fqn = resolvedType.asReferenceType().getQualifiedName();
+        try {
+            return Class.forName(fqn, false, AbstractCompiler.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            // Log warning or handle gracefully
+            return null;
+        }
+    }
+    return null;
+}
+```
+
+## 4. Redundancy Analysis & Code Cleanup
+
+Adopting `ResolvedType` exposes redundancy in existing utility classes.
+
+### 4.1 ImportUtils.java
+This class contains manual logic to determine if an import is needed by comparing package names and handling "simple name" resolution.
+*   **Redundant Logic**: `addImport(GraphNode, Type)` manually finds `TypeWrapper`, checks packages, and resolves FQNs.
+*   **Replacement**: `ResolvedType.describe()` provides the fully qualified name directly. The logic can be simplified to:
+    ```java
+    if (!resolvedType.describe().startsWith("java.lang.") && !currentPackage.equals(resolvedType.getPackageName())) {
+        // add import
+    }
+    ```
+*   **Recommendation**: Deprecate `ImportUtils` methods that perform manual resolution. Replace them with logic that queries `ResolvedType` directly.
+
+### 4.2 AbstractCompiler.java
+*   **Redundant Logic**: `findType(CompilationUnit, String)` implements a complex heuristic search (checking imports, inner classes, wildcards, `java.lang`, etc.).
+*   **Replacement**: `JavaSymbolSolver` (via `JavaParserFacade` or `SymbolSolver`) natively implements this resolution logic (JLS compliant).
+*   **Recommendation**: The heavy lifting in `findType` should be delegated to `symbolSolver.solveType(name)`. The `detectTypeWithClassLoaders` method is largely a custom implementation of what `ReflectionTypeSolver` (part of `CombinedTypeSolver`) already does.
+
+## 5. Benefits of Evolutionary Strategy
 
 1.  **Risk Reduction**: Preserves existing API contracts, minimizing breaking changes in `AbstractCompiler`, `Resolver`, and `GraphNode`.
 2.  **Accuracy**: `ResolvedType` handles generics, type inference, and boxing/unboxing significantly better than the custom logic currently in `TypeWrapper`.
@@ -109,10 +154,10 @@ public boolean hasAnnotation(String qualifiedName) {
 }
 ```
 
-## 5. Feasibility
+## 6. Feasibility
 The migration is highly feasible because `AbstractCompiler` already sets up the `JavaSymbolSolver`. The codebase is currently re-implementing much of what `JavaSymbolSolver` does natively. Transitioning to the native solver will reduce code debt and improve reliability.
 
-## 6. Implementation Plan
+## 7. Implementation Plan
 
 The migration should be done in phases to minimize disruption.
 
@@ -132,14 +177,14 @@ The migration should be done in phases to minimize disruption.
 - Introduce new methods in `AbstractCompiler` that work directly with `ResolvedType`.
 - Update call sites (`Resolver`, `DepSolver`) to prefer the new methods (`getResolvedType()`) over legacy accessors.
 
-## 7. Risks and Mitigations
+## 8. Risks and Mitigations
 
 - **Reflection Access**: Some parts of the code specifically need the `java.lang.Class` object (e.g., for instantiation).
-    - *Mitigation*: `ResolvedReferenceTypeDeclaration` often allows access to the underlying reflection object if it is reflection-based. For source-based types, the need for `Class` objects should be minimized or handled via specific bridges.
+    - *Mitigation*: As described in section 3.3, `java.lang.Class` can be retrieved using `Class.forName()` with the fully qualified name from the `ResolvedType`.
 - **Performance**: `JavaSymbolSolver` can be slower than simple name matching.
     - *Mitigation*: Ensure `JavaParserCache` is effectively used. The current `TypeWrapper` logic also performs expensive operations (class loading), so the net performance impact should be neutral or positive due to better caching.
 - **Inexact Matching**: `TypeWrapper.isAssignableFrom` currently has some "fuzzy" matching logic.
     - *Mitigation*: Careful testing is required to ensure `ResolvedType.isAssignableBy` covers the necessary cases. If "fuzzy" matching is a requirement, it can be re-implemented as a custom method within the refactored `TypeWrapper`.
 
-## 8. Conclusion
-Moving to `ResolvedType` is a necessary step for the project's maturity. The **Evolutionary Strategy**—refactoring `TypeWrapper` to encapsulate `ResolvedType`—offers the safest and most pragmatic path. It allows the project to immediately benefit from robust type resolution while deferring the cost and risk of a system-wide refactoring.
+## 9. Conclusion
+Moving to `ResolvedType` is a necessary step for the project's maturity. The **Evolutionary Strategy**—refactoring `TypeWrapper` to encapsulate `ResolvedType`—offers the safest and most pragmatic path. It allows the project to immediately benefit from robust type resolution while deferring the cost and risk of a system-wide refactoring, and also enables the cleanup of redundant logic in `ImportUtils` and `AbstractCompiler`.
