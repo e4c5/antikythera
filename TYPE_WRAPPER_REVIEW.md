@@ -44,6 +44,26 @@ JavaParser's `javaparser-symbol-solver` provides a robust, standard way to handl
 | `isController()`, `isService()` | `ResolvedReferenceTypeDeclaration.hasAnnotation("org.springframework.stereotype.Controller")`, etc. |
 | `findType(string)` | `TypeSolver.solveType(string)` |
 
+### 3.2 Converting ResolvedType to AST
+
+One of the most critical functions of `TypeWrapper` is holding a reference to the `TypeDeclaration` (AST). `ResolvedType` separates the symbol (resolved) from the source (AST). To retrieve the AST node from a `ResolvedType`, the following pattern should be used:
+
+```java
+public Optional<TypeDeclaration<?>> toAst(ResolvedType resolvedType) {
+    if (resolvedType.isReferenceType()) {
+        return resolvedType.asReferenceType()
+                .getTypeDeclaration()
+                .flatMap(ResolvedReferenceTypeDeclaration::toAst)
+                .flatMap(node -> node instanceof TypeDeclaration
+                        ? Optional.of((TypeDeclaration<?>) node)
+                        : Optional.empty());
+    }
+    return Optional.empty();
+}
+```
+
+*Note: `ResolvedReferenceTypeDeclaration.toAst()` returns `Optional<Node>`, so a cast/check is required.*
+
 ## 4. Feasibility and Benefits
 
 ### Benefits
