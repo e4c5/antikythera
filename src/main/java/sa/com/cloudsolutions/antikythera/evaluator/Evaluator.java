@@ -1562,7 +1562,9 @@ public class Evaluator implements EvaluationEngine {
         if (init.isPresent()) {
             if (init.get().isObjectCreationExpr()) {
                 Variable v = createObject(init.get().asObjectCreationExpr());
-                v.setType(variable.getType());
+                if (v != null) {
+                    v.setType(variable.getType());
+                }
                 return v;
             } else {
                 Evaluator eval = EvaluatorFactory.create(resolvedClass, this);
