@@ -349,10 +349,14 @@ public class SpringEvaluator extends ControlFlowEvaluator {
                     assignExpr.getTarget().toString().equals(p.getNameAsString())) {
 
                 parameterAssignment(assignExpr, va);
-                va.setInitializer(List.of(assignExpr));
+                if (va != null) {
+                    va.setInitializer(List.of(assignExpr));
+                }
             } else if (cond.getExpression() instanceof ObjectCreationExpr oce) {
-                va.setValue(createObject(oce).getValue());
-                va.setInitializer(List.of(oce));
+                if (va != null) {
+                    va.setValue(createObject(oce).getValue());
+                    va.setInitializer(List.of(oce));
+                }
             }
         }
     }

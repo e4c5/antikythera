@@ -657,7 +657,9 @@ public class Evaluator implements EvaluationEngine {
                  * this could raise a null pointer exception, that's fine with me. that means
                  * some other code is misbehaving and this NPE will give a change to catch it
                  */
-                v.setInitializer(List.of(init.get()));
+                if (v != null) {
+                    v.setInitializer(List.of(init.get()));
+                }
             } else {
                 /*
                  * No initializer. We need to create an entry in the symbol table. If the variable is
