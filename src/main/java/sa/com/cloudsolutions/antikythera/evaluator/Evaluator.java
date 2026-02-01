@@ -765,12 +765,20 @@ public class Evaluator implements EvaluationEngine {
                 AntikytheraRunTime.push(variable);
             } else {
                 Variable variable = evaluateExpression(expr);
-                if (variable.getType() == null && variable.getValue() instanceof Evaluator eval) {
-                    variable.setType(AbstractCompiler.typeFromDeclaration(
-                            AntikytheraRunTime.getTypeDeclaration(eval.getClassName()).orElseThrow()));
+                if (variable != null) {
+                    if (variable.getType() == null && variable.getValue() instanceof Evaluator eval) {
+                        variable.setType(AbstractCompiler.typeFromDeclaration(
+                                AntikytheraRunTime.getTypeDeclaration(eval.getClassName()).orElseThrow()));
+                    }
+                    args.push(variable.getType());
+                    AntikytheraRunTime.push(variable);
+                } else {
+                    // Handle null result from evaluateExpression (e.g., void method call or null literal)
+                    // We need to push something to keep arguments aligned, probably a null Variable
+                    Variable nullVar = new Variable(null);
+                    args.push(null); // Or unknown type?
+                    AntikytheraRunTime.push(nullVar);
                 }
-                args.push(variable.getType());
-                AntikytheraRunTime.push(variable);
             }
         }
 

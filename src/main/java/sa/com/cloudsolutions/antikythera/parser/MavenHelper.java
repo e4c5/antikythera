@@ -372,8 +372,7 @@ public class MavenHelper {
      *
      * @param v1 the first version
      * @param v2 the second version
-     * @return a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second;
-     *         if either version string has an invalid numeric format, zero is returned
+     * @return a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second
      */
     public static int compareVersions(String v1, String v2) {
         try {

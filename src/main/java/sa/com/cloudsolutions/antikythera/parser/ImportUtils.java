@@ -35,17 +35,14 @@ public class ImportUtils {
         }
         return null;
     }
-         * Resolves the type using AbstractCompiler and adds an import to the destination
-         * compilation unit if needed.
-         *
-         * When the type resolves to a source TypeDeclaration, a GraphNode is created and
-         * returned; when resolution only succeeds via reflection or fails entirely, no
-         * GraphNode is created.
-         *
-         * @param node the current graph node
-         * @param type the Type to resolve
-         * @return the GraphNode for a resolved AST-based type declaration, or null when
-         *         no such type node is created (including reflection-only resolutions)
+
+    /**
+     * Adds an import to the graph node based on a Type.
+     * Resolves the type using AbstractCompiler and adds an import to the destination compilation unit if needed.
+     *
+     * @param node the current graph node
+     * @param type the Type to resolve
+     * @return the resolved GraphNode, or null if not found
      */
     public static GraphNode addImport(GraphNode node, Type type) {
         CompilationUnit compilationUnit = node.getCompilationUnit();
@@ -94,13 +91,11 @@ public class ImportUtils {
 
     /**
      * Adds an import to the graph node based on a string name.
-     * Tries to find an existing import or resolve the fully qualified name and may
-     * create additional graph nodes for referenced types, fields, or enum constants.
+     * Tries to find an existing import or resolves the fully qualified name.
      *
      * @param node the current graph node
      * @param name the name to resolve (e.g., class name)
-     * @return a GraphNode for a resolved type when one is created, or null when no
-     *         type node is created even if imports or non-type graph nodes are added
+     * @return the resolved GraphNode, or null if not found
      */
     public static GraphNode addImport(GraphNode node, String name) {
         GraphNode returnValue = null;

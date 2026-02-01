@@ -276,12 +276,12 @@ public class AbstractCompiler {
 
     /**
      * Finds the type wrappers for a given type in a compilation unit.
-     * Handles generic types by resolving type arguments where possible.
+     * Handles generic types by resolving type arguments.
      *
      * @param cu the compilation unit containing the type
      * @param type the type to resolve
-     * @return a list of TypeWrappers representing the resolved types; the list may be empty,
-     *         and individual entries may be {@code null} when a type cannot be resolved
+     * @return a list of TypeWrappers representing the resolved types
+     */
     public static List<TypeWrapper> findWrappedTypes(CompilationUnit cu, Type type) {
         if (type.isClassOrInterfaceType()) {
             ClassOrInterfaceType classType = type.asClassOrInterfaceType();
@@ -1400,8 +1400,7 @@ public class AbstractCompiler {
      *
      * @param t the type to check
      * @param compilationUnit the compilation unit context
-     * @return {@code true} if the class is final, {@code false} if it is not final or if the
-     *         type cannot be resolved
+     * @return true if the class is final, false otherwise
      */
     public static boolean isFinalClass(Type t, CompilationUnit compilationUnit) {
         String fullClassName = AbstractCompiler.findFullyQualifiedName(compilationUnit, t);
@@ -1484,9 +1483,10 @@ public class AbstractCompiler {
     }
 
     /**
-     * Gets the ClassLoader used by the compiler, if it has been initialized.
+     * Gets the ClassLoader used by the compiler.
      *
-     * @return the ClassLoader, or {@code null} if the parser has not been set up yet
+     * @return the ClassLoader
+     */
     public static ClassLoader getClassLoader() {
         return loader;
     }
