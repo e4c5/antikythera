@@ -59,6 +59,12 @@ public class RepositoryParser extends BaseRepositoryParser {
     private final Map<MethodDeclaration, ResultSet> happyCache = new HashMap<>();
 
 
+    /**
+     * Constructs a new RepositoryParser.
+     * Initializes database connection settings from the configuration.
+     *
+     * @throws IOException if there is an error during initialization
+     */
     public RepositoryParser() throws IOException {
         super();
 
@@ -108,6 +114,15 @@ public class RepositoryParser extends BaseRepositoryParser {
         }
     }
 
+    /**
+     * Main method to execute the parser on a specific repository class.
+     * Useful for testing and visualization.
+     *
+     * @param args command line arguments, expecting the path to the repository class
+     * @throws IOException if there is an error reading the file
+     * @throws SQLException if there is a database error
+     * @throws JSQLParserException if there is a SQL parsing error
+     */
     public static void main(String[] args) throws IOException, SQLException, JSQLParserException {
         if(args.length != 1) {
             logger.error("Please specify the path to a repository class");
@@ -156,6 +171,8 @@ public class RepositoryParser extends BaseRepositoryParser {
      * Execute the query represented by the method.
      * @param method the name of the method that represents the query in the JPARepository interface
      * @return the result set if the query was executed successfully
+     * @throws SQLException if there is a database error
+     * @throws JSQLParserException if there is a SQL parsing error
      */
     public ResultSet executeQuery(Callable method) throws SQLException, JSQLParserException {
         RepositoryQuery rql = queries.get(method);
@@ -165,6 +182,15 @@ public class RepositoryParser extends BaseRepositoryParser {
         return rs;
     }
 
+    /**
+     * Executes a repository query for a callable method.
+     *
+     * @param rql the RepositoryQuery object
+     * @param method the callable method
+     * @return the ResultSet, or null if execution failed or not applicable
+     * @throws SQLException if there is a database error
+     * @throws JSQLParserException if there is a SQL parsing error
+     */
     public ResultSet executeQuery(RepositoryQuery rql, Callable method) throws SQLException, JSQLParserException {
         if(method.isMethodDeclaration()) {
             return executeQuery(rql, method.asMethodDeclaration());
@@ -172,6 +198,16 @@ public class RepositoryParser extends BaseRepositoryParser {
         return null;
     }
 
+    /**
+     * Executes a repository query for a method declaration.
+     * Binds parameters and executes the SQL statement.
+     *
+     * @param rql the RepositoryQuery object
+     * @param method the method declaration
+     * @return the ResultSet
+     * @throws SQLException if there is a database error
+     * @throws JSQLParserException if there is a SQL parsing error
+     */
     public ResultSet executeQuery(RepositoryQuery rql, MethodDeclaration method) throws SQLException, JSQLParserException {
         if(runQueries) {
             RepositoryParser.createConnection();
@@ -206,6 +242,7 @@ public class RepositoryParser extends BaseRepositoryParser {
      * @param method the method in the JPARepository
      * @param argumentCount the number of placeholders
      * @throws SQLException if the statement cannot be executed
+     * @throws JSQLParserException if there is a SQL parsing error
      */
     void executeSimplifiedQuery(RepositoryQuery rql, MethodDeclaration method, int argumentCount) throws SQLException, JSQLParserException {
         rql.buildSimplifiedQuery();
@@ -230,6 +267,15 @@ public class RepositoryParser extends BaseRepositoryParser {
 
     }
 
+    /**
+     * Binds a single parameter to the PreparedStatement.
+     * Handles different types (Long, String, Integer, Boolean, List, etc.).
+     *
+     * @param arg the query method argument containing the value
+     * @param prep the PreparedStatement
+     * @param i the index of the parameter (0-based)
+     * @throws SQLException if there is a database error
+     */
     static void bindParameters(QueryMethodArgument arg, PreparedStatement prep, int i) throws SQLException {
         Class<?> clazz = arg.getVariable().getClazz();
         if (clazz == null) {
@@ -272,6 +318,13 @@ public class RepositoryParser extends BaseRepositoryParser {
 
     private static final Pattern AND_PATTERN = Pattern.compile("\\bAND\\b", Pattern.CASE_INSENSITIVE);
     
+    /**
+     * Cleans up and beautifies the SQL string.
+     * Replaces named/numbered placeholders with standard '?' and removes redundant conditions.
+     *
+     * @param sql the raw SQL string
+     * @return the beautified SQL string
+     */
     static String beautify(String sql) {
         sql = sql.replaceAll("\\?\\d+", "?");
 

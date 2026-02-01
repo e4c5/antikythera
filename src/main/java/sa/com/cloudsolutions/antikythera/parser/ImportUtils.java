@@ -12,9 +12,20 @@ import sa.com.cloudsolutions.antikythera.generator.TypeWrapper;
 
 import java.util.Optional;
 
+/**
+ * Utility class for handling imports and resolving types to graph nodes.
+ */
 public class ImportUtils {
     private ImportUtils() {}
 
+    /**
+     * Adds an import to the graph node based on an expression.
+     * Supports NameExpr and ObjectCreationExpr.
+     *
+     * @param node the current graph node
+     * @param expr the expression to derive the import from
+     * @return the resolved GraphNode, or null if not found
+     */
     public static GraphNode addImport(GraphNode node, Expression expr) {
         if (expr.isNameExpr()) {
             return ImportUtils.addImport(node, expr.asNameExpr().getNameAsString());
@@ -25,6 +36,14 @@ public class ImportUtils {
         return null;
     }
 
+    /**
+     * Adds an import to the graph node based on a Type.
+     * Resolves the type using AbstractCompiler and adds an import to the destination compilation unit if needed.
+     *
+     * @param node the current graph node
+     * @param type the Type to resolve
+     * @return the resolved GraphNode, or null if not found
+     */
     public static GraphNode addImport(GraphNode node, Type type) {
         CompilationUnit compilationUnit = node.getCompilationUnit();
         TypeWrapper wrapper = AbstractCompiler.findType(compilationUnit, type);
@@ -70,6 +89,14 @@ public class ImportUtils {
         return n;
     }
 
+    /**
+     * Adds an import to the graph node based on a string name.
+     * Tries to find an existing import or resolves the fully qualified name.
+     *
+     * @param node the current graph node
+     * @param name the name to resolve (e.g., class name)
+     * @return the resolved GraphNode, or null if not found
+     */
     public static GraphNode addImport(GraphNode node, String name) {
         GraphNode returnValue = null;
         ImportWrapper imp = AbstractCompiler.findImport(node.getCompilationUnit(), name);
@@ -96,6 +123,12 @@ public class ImportUtils {
         return returnValue;
     }
 
+    /**
+     * Finds the package name for a given class.
+     *
+     * @param clazz the class
+     * @return the package name, or empty string if not in a package
+     */
     public static String findPackage(Class<?> clazz) {
         if (clazz.getPackage() != null) {
             return clazz.getPackage().getName();
@@ -103,6 +136,12 @@ public class ImportUtils {
         return "";
     }
 
+    /**
+     * Finds the package name for a given TypeDeclaration.
+     *
+     * @param t the TypeDeclaration
+     * @return the package name, or empty string if not found
+     */
     public static String findPackage(TypeDeclaration<?> t) {
         return t.findCompilationUnit()
                 .flatMap(CompilationUnit::getPackageDeclaration)

@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Basic converter utility for handling common query components.
+ * Provides functionality to convert HQL/JPA specific field names to database column names (snake_case).
+ */
 public class BasicConverter {
 
     private static final String ID_ANNOTATION = "Id";
@@ -326,6 +330,12 @@ public class BasicConverter {
 
     // --- Field conversion helpers --------------------------------------------
 
+    /**
+     * Converts general projections (select items) to snake_case.
+     * Iterates through the list of select items and converts fields/expressions.
+     *
+     * @param items the list of select items to process
+     */
     protected static void generalProjections(List<SelectItem<?>> items) {
         for (int i = 0; i < items.size(); i++) {
             SelectItem<?> item = items.get(i);

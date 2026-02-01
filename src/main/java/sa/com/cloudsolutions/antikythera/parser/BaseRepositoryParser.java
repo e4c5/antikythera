@@ -105,11 +105,24 @@ public class BaseRepositoryParser extends AbstractCompiler {
     Type entityType;
     Evaluator eval;
 
+    /**
+     * Constructs a new BaseRepositoryParser.
+     * Initializes the compiler and query map.
+     *
+     * @throws IOException if there is an error initializing the compiler
+     */
     public BaseRepositoryParser() throws IOException {
         super();
         queries = new HashMap<>();
     }
 
+    /**
+     * Creates a new BaseRepositoryParser instance for a given compilation unit.
+     *
+     * @param cu the CompilationUnit to parse
+     * @return the created BaseRepositoryParser
+     * @throws IOException if there is an error during initialization
+     */
     public static BaseRepositoryParser create(CompilationUnit cu) throws IOException {
         BaseRepositoryParser parser = new BaseRepositoryParser();
         parser.cu = cu;
@@ -234,6 +247,13 @@ public class BaseRepositoryParser extends AbstractCompiler {
         return isJpaRepository(typeWrapper.getType());
     }
 
+    /**
+     * Checks if a TypeDeclaration represents a JPA repository.
+     * Analyzes extended types to see if they match known repository interfaces.
+     *
+     * @param type the TypeDeclaration to check
+     * @return true if it is a JPA repository, false otherwise
+     */
     public static boolean isJpaRepository(TypeDeclaration<?> type) {
         if (type instanceof ClassOrInterfaceDeclaration classOrInterface && classOrInterface.isInterface()) {
 
@@ -258,6 +278,11 @@ public class BaseRepositoryParser extends AbstractCompiler {
                         (interfaceName.contains("org.springframework.data") || interfaceName.endsWith("Repository")));
     }
 
+    /**
+     * Gets the configured database dialect.
+     *
+     * @return the DatabaseDialect
+     */
     public static DatabaseDialect getDialect() {
         return dialect;
     }
@@ -270,6 +295,12 @@ public class BaseRepositoryParser extends AbstractCompiler {
         return count;
     }
 
+    /**
+     * Retrieves the repository query associated with a callable method.
+     *
+     * @param repoMethod the callable method
+     * @return the RepositoryQuery, or null if not found
+     */
     public RepositoryQuery getQueryFromRepositoryMethod(Callable repoMethod) {
         return queries.get(repoMethod);
     }
@@ -601,6 +632,10 @@ public class BaseRepositoryParser extends AbstractCompiler {
         return queries.values();
     }
 
+    /**
+     * Builds the repository queries by visiting the compilation unit.
+     * Clears existing queries and re-parses.
+     */
     public void buildQueries() {
         queries.clear();
         parserAdapter = new HQLParserAdapter(cu, entity);
@@ -611,6 +646,7 @@ public class BaseRepositoryParser extends AbstractCompiler {
 
     /**
      * Process the CompilationUnit to identify all the queries.
+     * Identifies entity types and table names from repository extensions.
      */
     public void processTypes() {
         /*
@@ -634,6 +670,11 @@ public class BaseRepositoryParser extends AbstractCompiler {
         }
     }
 
+    /**
+     * Gets the entity type wrapper associated with this repository.
+     *
+     * @return the TypeWrapper for the entity
+     */
     public TypeWrapper getEntity() {
         return entity;
     }
@@ -642,6 +683,12 @@ public class BaseRepositoryParser extends AbstractCompiler {
      * Visitor to iterate through the methods in the repository
      */
     class Visitor extends VoidVisitorAdapter<Void> {
+        /**
+         * Visits method declarations to extract queries.
+         *
+         * @param n the MethodDeclaration
+         * @param arg unused
+         */
         @Override
         public void visit(MethodDeclaration n, Void arg) {
             super.visit(n, arg);

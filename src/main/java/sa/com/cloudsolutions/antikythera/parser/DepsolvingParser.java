@@ -12,10 +12,18 @@ import sa.com.cloudsolutions.antikythera.evaluator.SpringEvaluator;
 
 import java.io.IOException;
 
+/**
+ * Abstract base class for parsers that solve dependencies.
+ */
 public abstract class DepsolvingParser {
     CompilationUnit cu;
     protected SpringEvaluator evaluator;
 
+    /**
+     * Starts the parsing process for all methods in the compilation unit.
+     *
+     * @throws IOException if there is an error during processing
+     */
     public void start() throws IOException {
         for(TypeDeclaration<?> decl : cu.getTypes()) {
             DepSolver solver = DepSolver.createSolver();
@@ -29,6 +37,12 @@ public abstract class DepsolvingParser {
         }
     }
 
+    /**
+     * Starts the parsing process for a specific method.
+     *
+     * @param method the name of the method to process
+     * @throws IOException if there is an error during processing
+     */
     public void start(String method) throws IOException{
         for(TypeDeclaration<?> decl : cu.getTypes()) {
             DepSolver solver = DepSolver.createSolver();
@@ -56,6 +70,12 @@ public abstract class DepsolvingParser {
     }
 
 
+    /**
+     * Evaluates a method to generate tests or perform analysis.
+     *
+     * @param md the method declaration
+     * @param gen the argument generator
+     */
     public abstract void evaluateMethod(MethodDeclaration md, ArgumentGenerator gen);
 
 }

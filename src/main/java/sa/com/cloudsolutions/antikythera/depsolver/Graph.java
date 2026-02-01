@@ -139,10 +139,20 @@ public class Graph {
         }
     }
 
+    /**
+     * Gets the map of file dependencies.
+     *
+     * @return the dependencies map
+     */
     public static Map<String, CompilationUnit> getDependencies() {
         return dependencies;
     }
 
+    /**
+     * Gets the map of graph nodes.
+     *
+     * @return the nodes map
+     */
     public static Map<Integer, GraphNode> getNodes() {
         return nodes;
     }

@@ -59,6 +59,11 @@ public class QueryConversionException extends AntikytheraException {
         return reason;
     }
     
+    /**
+     * Returns the string representation of the exception.
+     *
+     * @return the string representation
+     */
     @Override
     public String toString() {
         return "QueryConversionException{" +

@@ -45,6 +45,12 @@ public class EntityMappingResolver {
         shortNames.clear();
     }
 
+    /**
+     * Builds the entity mappings by scanning resolved types.
+     * Iterates through all known types and processes those annotated with @Entity.
+     *
+     * @throws AntikytheraException if the mappings have already been built
+     */
     public static void build() {
         if (!mapping.isEmpty()) {
             throw new AntikytheraException("Already built");
@@ -465,14 +471,32 @@ public class EntityMappingResolver {
         return AbstractCompiler.camelToSnakeCase(field.getName());
     }
 
+    /**
+     * Gets the map of all entity metadata.
+     *
+     * @return the mapping map
+     */
     public static Map<String, EntityMetadata> getMapping() {
         return mapping;
     }
 
+    /**
+     * Gets the set of fully qualified names for a given short entity name.
+     *
+     * @param name the short name of the entity
+     * @return a set of fully qualified names
+     */
     public static Set<String> getFullNamesForEntity(String name) {
         return shortNames.getOrDefault(name, Collections.emptySet());
     }
 
+    /**
+     * Gets the database table name associated with an entity.
+     * Tries to resolve by full name or short name. Fallback to snake_case of entity name.
+     *
+     * @param entityName the name of the entity
+     * @return the table name
+     */
     public static String getTableNameForEntity(String entityName) {
         EntityMetadata meta = mapping.get(entityName);
         if (meta == null) {

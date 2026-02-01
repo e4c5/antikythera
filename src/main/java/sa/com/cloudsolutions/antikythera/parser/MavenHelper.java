@@ -31,6 +31,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Helper class for interacting with Maven projects, parsing POM files, and resolving dependencies.
+ */
 public class MavenHelper {
     public static final String POM_XML = "pom.xml";
     private static final Logger logger = LoggerFactory.getLogger(MavenHelper.class);
@@ -39,6 +42,12 @@ public class MavenHelper {
     private Model pomModel;
     private Path pomPath;
 
+    /**
+     * Gets the paths to all resolved JAR files from the dependencies.
+     * Initializes the paths if they haven't been built yet.
+     *
+     * @return an array of absolute paths to the JAR files
+     */
     public static String[] getJarPaths() {
         if (!jarPathsBuilt) {
             initializeJarPaths();
@@ -69,6 +78,10 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Adds a dependency to the artifacts map.
+     * Recursively processes parent POMs if necessary.
+     */
     private static void addDependency(String m2, String groupIdPath, String artifactId, String version)
             throws IOException, XmlPullParserException {
         Path p = Paths.get(m2, groupIdPath, artifactId, version,
@@ -94,6 +107,14 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Reads the pom.xml file based on the configured base path.
+     * Tries to locate the POM in the project root or parent directories.
+     *
+     * @return the parsed Maven Model
+     * @throws IOException if the file cannot be read
+     * @throws XmlPullParserException if the file cannot be parsed
+     */
     public Model readPomFile() throws IOException, XmlPullParserException {
         String basePath = Settings.getBasePath();
         Path p = null;
@@ -158,6 +179,11 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Gets the path to the currently loaded POM file.
+     *
+     * @return the POM path
+     */
     public Path getPomPath() {
         return pomPath;
     }
@@ -287,6 +313,10 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Builds the list of JAR paths from the POM model's dependencies.
+     * Resolves versions and locates JARs in the local Maven repository.
+     */
     public void buildJarPaths() {
 
         if (pomModel != null) {
@@ -337,6 +367,13 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Compares two version strings.
+     *
+     * @param v1 the first version
+     * @param v2 the second version
+     * @return a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second
+     */
     public static int compareVersions(String v1, String v2) {
         try {
             String[] parts1 = v1.split("\\.");
@@ -378,6 +415,13 @@ public class MavenHelper {
         }
     }
 
+    /**
+     * Gets the POM model, reading it from the file if necessary.
+     *
+     * @return the Maven Model
+     * @throws XmlPullParserException if parsing fails
+     * @throws IOException if reading fails
+     */
     public Model getPomModel() throws XmlPullParserException, IOException {
         if (pomModel == null) {
             return readPomFile();

@@ -138,6 +138,11 @@ public class ConversionResult {
         return successful && dtoClassName != null;
     }
 
+    /**
+     * Returns the string representation of the conversion result.
+     *
+     * @return the string representation
+     */
     @Override
     public String toString() {
         if (successful) {
@@ -147,10 +152,20 @@ public class ConversionResult {
         }
     }
 
+    /**
+     * Sets the metadata from the HQL analysis.
+     *
+     * @param analysis the MetaData object
+     */
     public void setMetaData(MetaData analysis) {
         this.metaData = analysis;
     }
 
+    /**
+     * Gets the metadata from the HQL analysis.
+     *
+     * @return the MetaData object
+     */
     public  MetaData getMetaData() {
         return metaData;
     }

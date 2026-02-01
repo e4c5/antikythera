@@ -55,6 +55,11 @@ public enum ConversionFailureReason {
         return description;
     }
     
+    /**
+     * Returns the string representation of the failure reason.
+     *
+     * @return the name and description
+     */
     @Override
     public String toString() {
         return name() + ": " + description;

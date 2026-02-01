@@ -46,6 +46,12 @@ public class HQLParserAdapter {
     private final Set<DatabaseDialect> supportedDialects;
     TypeWrapper entity;
 
+    /**
+     * Constructs a new HQLParserAdapter.
+     *
+     * @param cu the compilation unit
+     * @param entity the entity type wrapper
+     */
     public HQLParserAdapter(CompilationUnit cu, TypeWrapper entity) {
         this.hqlParser = new HQLParser();
         this.sqlConverter = new HQLToPostgreSQLConverter();
@@ -409,6 +415,12 @@ public class HQLParserAdapter {
         }
     }
 
+    /**
+     * Resolves the fully qualified entity name for a given simple name or alias.
+     *
+     * @param name the simple name or alias
+     * @return the fully qualified name, or null if not found
+     */
     String getEntiyNameForEntity(String name) {
         if (name.equals(entity.getName()) || name.equals(entity.getFullyQualifiedName())) {
             return entity.getFullyQualifiedName();

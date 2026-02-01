@@ -45,6 +45,12 @@ public class MCEWrapper {
         return argumentTypes;
     }
 
+    /**
+     * Gets the argument types as an array of Classes.
+     * Tries to resolve each type to a Class object.
+     *
+     * @return an array of Class objects representing the argument types, or null if argumentTypes is null
+     */
     public Class<?>[] getArgumentTypesAsClasses()  {
         if (argumentTypes == null) {
             return null;
@@ -94,10 +100,20 @@ public class MCEWrapper {
         this.argumentTypes = argumentTypes;
     }
 
+    /**
+     * Gets the underlying method call expression.
+     *
+     * @return the NodeWithArguments representing the method call
+     */
     public NodeWithArguments<?> getMethodCallExpr() {
         return methodCallExpr;
     }
 
+    /**
+     * Returns the string representation of the method call expression.
+     *
+     * @return the string representation
+     */
     @Override
     public String toString() {
         if (methodCallExpr != null) {
@@ -106,6 +122,11 @@ public class MCEWrapper {
         return "";
     }
 
+    /**
+     * Gets the name of the method being called.
+     *
+     * @return the method name, or null if it's not a MethodCallExpr
+     */
     public String getMethodName() {
         if (methodCallExpr instanceof MethodCallExpr mce) {
             return mce.getNameAsString();
@@ -114,14 +135,29 @@ public class MCEWrapper {
         return null;
     }
 
+    /**
+     * Gets the callable declaration (method or constructor) that matches this call.
+     *
+     * @return the matching Callable
+     */
     public Callable getMatchingCallable() {
         return matchingCallable;
     }
 
+    /**
+     * Sets the matching callable declaration.
+     *
+     * @param match the matching Callable
+     */
     public void setMatchingCallable(Callable match) {
         this.matchingCallable = match;
     }
 
+    /**
+     * Returns the underlying expression as a MethodCallExpr if applicable.
+     *
+     * @return an Optional containing the MethodCallExpr, or empty if it's not one
+     */
     public Optional<MethodCallExpr> asMethodCallExpr() {
         if (methodCallExpr instanceof MethodCallExpr mce) {
             return Optional.of(mce);

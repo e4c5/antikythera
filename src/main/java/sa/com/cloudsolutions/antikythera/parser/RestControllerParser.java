@@ -58,6 +58,12 @@ public class RestControllerParser extends DepsolvingParser {
         Files.createDirectories(Paths.get(Settings.getProperty(Settings.OUTPUT_PATH).toString(), "src/test/resources/uploads"));
     }
 
+    /**
+     * Starts the parsing and test generation process for the controller.
+     *
+     * @throws EvaluatorException if an error occurs during evaluation
+     * @throws IOException if there is an error reading or writing files
+     */
     @Override
     public void start() throws EvaluatorException, IOException {
         if(cu != null && cu.getPackageDeclaration().isPresent()) {
@@ -65,6 +71,13 @@ public class RestControllerParser extends DepsolvingParser {
         }
     }
 
+    /**
+     * Evaluates a single method.
+     * Note: This implementation throws UnsupportedOperationException as it's not yet implemented here.
+     *
+     * @param md the method declaration
+     * @param gen the argument generator
+     */
     @Override
     public void evaluateMethod(MethodDeclaration md, ArgumentGenerator gen) {
         throw new UnsupportedOperationException("To be completed");
@@ -196,6 +209,11 @@ public class RestControllerParser extends DepsolvingParser {
         return "";
     }
 
+    /**
+     * Gets the statistics collected during parsing.
+     *
+     * @return the Stats object
+     */
     public static Stats getStats() {
         return stats;
     }

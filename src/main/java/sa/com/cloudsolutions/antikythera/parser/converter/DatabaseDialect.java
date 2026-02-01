@@ -171,6 +171,11 @@ public enum DatabaseDialect {
      */
     public static DatabaseDialect fromRepositoryParser(String repositoryDialect) { return fromString(repositoryDialect); }
 
+    /**
+     * Returns the string representation of the dialect (its display name).
+     *
+     * @return the display name
+     */
     @Override
     public String toString() {
         return displayName;

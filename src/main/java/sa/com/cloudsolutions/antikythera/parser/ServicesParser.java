@@ -40,6 +40,12 @@ public class ServicesParser {
     SpringEvaluator evaluator;
     UnitTestGenerator generator;
 
+    /**
+     * Constructs a ServicesParser for the given class name.
+     *
+     * @param cls the fully qualified class name to parse
+     * @throws AntikytheraException if the class cannot be found in the runtime
+     */
     public ServicesParser(String cls) {
         this.cls = cls;
         this.cu = AntikytheraRunTime.getCompilationUnit(cls);
@@ -48,6 +54,10 @@ public class ServicesParser {
         }
     }
 
+    /**
+     * Starts the parsing process for all methods in the class.
+     * Builds dependency graphs and triggers evaluation.
+     */
     public void start() {
 
         for(TypeDeclaration<?> decl : cu.getTypes()) {
@@ -66,6 +76,11 @@ public class ServicesParser {
         eval();
     }
 
+    /**
+     * Starts the parsing process for a specific method.
+     *
+     * @param method the name of the method to process
+     */
     public void start(String method) {
         for(TypeDeclaration<?> decl : cu.getTypes()) {
             DepSolver solver = DepSolver.createSolver();
@@ -87,6 +102,11 @@ public class ServicesParser {
         }
     }
 
+    /**
+     * Writes the generated tests to files.
+     *
+     * @throws IOException if there is an error writing the files
+     */
     public void writeFiles() throws IOException {
         if (generator != null) {
             generator.save();
@@ -95,6 +115,12 @@ public class ServicesParser {
         // This is expected and we can safely skip writing files
     }
 
+    /**
+     * Evaluates a method to generate tests.
+     *
+     * @param md the method declaration to evaluate
+     * @param gen the argument generator to use for evaluation
+     */
     public void evaluateMethod(MethodDeclaration md, ArgumentGenerator gen) {
         generator = (UnitTestGenerator) Factory.create("unit", cu);
         generator.addBeforeClass();
