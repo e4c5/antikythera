@@ -162,9 +162,9 @@ public class ConversionResult {
     }
 
     /**
-     * Gets the metadata from the HQL analysis.
+     * Gets the metadata from the HQL analysis, if available.
      *
-     * @return the MetaData object
+     * @return the MetaData object, or {@code null} if none has been set
      */
     public  MetaData getMetaData() {
         return metaData;

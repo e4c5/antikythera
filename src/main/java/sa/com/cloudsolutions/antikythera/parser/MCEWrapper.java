@@ -138,7 +138,7 @@ public class MCEWrapper {
     /**
      * Gets the callable declaration (method or constructor) that matches this call.
      *
-     * @return the matching Callable
+     * @return the matching Callable, or null if no match has been resolved
      */
     public Callable getMatchingCallable() {
         return matchingCallable;
