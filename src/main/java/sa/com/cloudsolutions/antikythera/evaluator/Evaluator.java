@@ -1552,10 +1552,15 @@ public class Evaluator implements EvaluationEngine {
             v = new Variable(t, null);
             v.setType(t);
         }
-        if (v!= null && v.getType() != null && v.getType().isPrimitiveType()
-                && v.getClazz() != null  && !v.getClazz().isPrimitive()) {
-            v.setValue(v.getClazz().cast(v.getValue()));
-            v.setType(new ClassOrInterfaceType().setName(v.getClazz().getName()));
+        if (v!= null) {
+            if (v.getType() == null) {
+                v.setType(t);
+            }
+            if (v.getType() != null && v.getType().isPrimitiveType()
+                    && v.getClazz() != null && !v.getClazz().isPrimitive()) {
+                v.setValue(v.getClazz().cast(v.getValue()));
+                v.setType(new ClassOrInterfaceType().setName(v.getClazz().getName()));
+            }
         }
         return v;
     }
