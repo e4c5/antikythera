@@ -91,6 +91,8 @@ public class GraphNode {
      */
     boolean preProcessed;
 
+    private int cachedHashCode = 0;
+
     /**
      * Creates a new GraphNode
      * However, it will not really be ready for use until you call the buildNode method
@@ -342,6 +344,7 @@ public class GraphNode {
      */
     public void setNode(Node node) {
         this.node = node;
+        this.cachedHashCode = 0;
     }
 
     /**
@@ -367,7 +370,11 @@ public class GraphNode {
      */
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        if (cachedHashCode != 0) {
+            return cachedHashCode;
+        }
+        cachedHashCode = toString().hashCode();
+        return cachedHashCode;
     }
 
     /**

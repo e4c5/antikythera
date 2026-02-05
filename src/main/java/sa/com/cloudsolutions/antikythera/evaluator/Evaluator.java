@@ -1608,12 +1608,10 @@ public class Evaluator implements EvaluationEngine {
         return (Variable) v;
     }
 
-    @Override
     public void visit(MethodDeclaration md) throws ReflectiveOperationException {
         executeMethod(md);
     }
 
-    @Override
     public void visit(ConstructorDeclaration cd) throws ReflectiveOperationException {
         executeConstructor(cd);
     }
@@ -1643,7 +1641,6 @@ public class Evaluator implements EvaluationEngine {
         return null;
     }
 
-    @Override
     public Variable executeMethod(MethodDeclaration md) throws ReflectiveOperationException {
         return executeMethod((CallableDeclaration<?>) md);
     }
