@@ -1599,7 +1599,9 @@ public class Evaluator implements EvaluationEngine {
         Optional<Expression> init = variable.getInitializer();
         if (init.isPresent()) {
             v = evaluateExpression(init.get());
-            v.setType(variable.getType());
+            if (v != null) {
+                v.setType(variable.getType());
+            }
         } else {
             v = new Variable(variable.getType(), Reflect.getDefault(variable.getType().toString()));
         }
