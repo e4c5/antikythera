@@ -132,18 +132,30 @@ public class AbstractCompiler {
     }
 
     /**
-     * Loads dependencies from the Maven pom.xml file on demand.
-     * This will populate MavenHelper with JAR paths and refresh the parser
-     * configuration to include these JARs in the symbol resolver.
+     * Loads dependencies from the project's build descriptor on demand.
+     * For Maven projects this reads {@code pom.xml}; for Gradle projects this reads
+     * {@code build.gradle} or {@code build.gradle.kts}.
+     * After resolving dependency JAR paths the symbol-resolver is refreshed.
      */
     public static void loadDependencies() {
-        MavenHelper mavenHelper = new MavenHelper();
-        try {
-            mavenHelper.readPomFile();
-            mavenHelper.buildJarPaths();
-            setupParser();
-        } catch (Exception e) {
-            logger.warn("Failed to load maven dependencies from POM: {}", e.getMessage());
+        if (GradleHelper.isGradleProject()) {
+            GradleHelper gradleHelper = new GradleHelper();
+            try {
+                gradleHelper.readBuildFile();
+                gradleHelper.buildJarPaths();
+                setupParser();
+            } catch (Exception e) {
+                logger.warn("Failed to load Gradle dependencies from build file: {}", e.getMessage());
+            }
+        } else {
+            MavenHelper mavenHelper = new MavenHelper();
+            try {
+                mavenHelper.readPomFile();
+                mavenHelper.buildJarPaths();
+                setupParser();
+            } catch (Exception e) {
+                logger.warn("Failed to load maven dependencies from POM: {}", e.getMessage());
+            }
         }
     }
 
@@ -163,6 +175,10 @@ public class AbstractCompiler {
             urls.add(Paths.get(s).toUri().toURL());
         }
         for (String s : MavenHelper.getJarPaths()) {
+            jarFiles.add(s);
+            urls.add(Paths.get(s).toUri().toURL());
+        }
+        for (String s : GradleHelper.getJarPaths()) {
             jarFiles.add(s);
             urls.add(Paths.get(s).toUri().toURL());
         }
@@ -192,6 +208,14 @@ public class AbstractCompiler {
     private static void setupSourcePaths() {
         // Add source roots from Maven POM if available
         sourceDirectories.clear();
+        if (GradleHelper.isGradleProject()) {
+            setupGradleSourcePaths();
+        } else {
+            setupMavenSourcePaths();
+        }
+    }
+
+    private static void setupMavenSourcePaths() {
         try {
             MavenHelper mavenHelper = new MavenHelper();
             Model pomModel = mavenHelper.getPomModel();
@@ -220,6 +244,35 @@ public class AbstractCompiler {
             }
         } catch (Exception e) {
             logger.debug("Could not read Maven source directories: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Sets up source paths for Gradle projects.
+     * Gradle projects use the same default layout as Maven ({@code src/main/java} and
+     * {@code src/test/java}) unless customised via {@code sourceSets} in the build file.
+     * Custom {@code sourceSets} are not parsed; only the standard directories are checked.
+     */
+    private static void setupGradleSourcePaths() {
+        try {
+            String basePath = Settings.getBasePath();
+            Path projectRoot = GradleHelper.findProjectRoot(basePath);
+            if (projectRoot == null) {
+                return;
+            }
+
+            Path mainJava = projectRoot.resolve(MAVEN_SRC_JAVA);
+            if (Files.isDirectory(mainJava)) {
+                combinedTypeSolver.add(new JavaParserTypeSolver(mainJava.toFile()));
+                sourceDirectories.add(mainJava);
+            }
+            Path testJava = projectRoot.resolve("src/test/java");
+            if (Files.isDirectory(testJava)) {
+                combinedTypeSolver.add(new JavaParserTypeSolver(testJava.toFile()));
+                // Do NOT add to sourceDirectories: test sources should not be extracted
+            }
+        } catch (Exception e) {
+            logger.debug("Could not set up Gradle source directories: {}", e.getMessage());
         }
     }
 

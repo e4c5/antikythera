@@ -15,6 +15,7 @@ import sa.com.cloudsolutions.antikythera.evaluator.mock.MockingRegistry;
 import sa.com.cloudsolutions.antikythera.exception.AntikytheraException;
 import sa.com.cloudsolutions.antikythera.exception.EvaluatorException;
 import sa.com.cloudsolutions.antikythera.parser.AbstractCompiler;
+import sa.com.cloudsolutions.antikythera.parser.GradleHelper;
 import sa.com.cloudsolutions.antikythera.parser.MavenHelper;
 import sa.com.cloudsolutions.antikythera.parser.RestControllerParser;
 import sa.com.cloudsolutions.antikythera.parser.ServicesParser;
@@ -113,6 +114,16 @@ public class Antikythera {
 
     private void copyBaseFiles(String outputPath) throws IOException, XmlPullParserException {
         String testPath = PACKAGE_PATH.replace("main", "test");
+        if (mavenHelper == null) {
+            mavenHelper = new MavenHelper();
+            if (!GradleHelper.isGradleProject()) {
+                try {
+                    mavenHelper.readPomFile();
+                } catch (Exception e) {
+                    logger.debug("Could not read POM file; will use template only: {}", e.getMessage());
+                }
+            }
+        }
         mavenHelper.copyPom();
         String name = mavenHelper.copyTemplate("TestHelper.txt", testPath, "base");
         if (name == null) {
