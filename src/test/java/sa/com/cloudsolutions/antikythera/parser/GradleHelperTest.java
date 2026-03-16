@@ -20,20 +20,20 @@ class GradleHelperTest {
     @Test
     void testFindProjectRootStripsMainJava(@TempDir Path tempDir) {
         String basePath = tempDir + "/src/main/java";
-        Path root = GradleHelper.findProjectRoot(basePath);
+        Path root = BuildHelper.findProjectRoot(basePath);
         assertEquals(tempDir.toAbsolutePath(), root);
     }
 
     @Test
     void testFindProjectRootStripsTestJava(@TempDir Path tempDir) {
         String basePath = tempDir + "/src/test/java";
-        Path root = GradleHelper.findProjectRoot(basePath);
+        Path root = BuildHelper.findProjectRoot(basePath);
         assertEquals(tempDir.toAbsolutePath(), root);
     }
 
     @Test
     void testFindProjectRootWithNull() {
-        assertNull(GradleHelper.findProjectRoot(null));
+        assertNull(BuildHelper.findProjectRoot(null));
     }
 
     // -------------------------------------------------------------------------

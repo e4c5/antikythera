@@ -256,7 +256,7 @@ public class AbstractCompiler {
     private static void setupGradleSourcePaths() {
         try {
             String basePath = Settings.getBasePath();
-            Path projectRoot = GradleHelper.findProjectRoot(basePath);
+            Path projectRoot = BuildHelper.findProjectRoot(basePath);
             if (projectRoot == null) {
                 return;
             }

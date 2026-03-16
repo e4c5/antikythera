@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * Unlike Maven's {@code ~/.m2/repository}, the group ID is stored with dots (not slashes) and
  * each version directory contains a content-addressable hash sub-directory.
  */
-public class GradleHelper {
+public class GradleHelper extends BuildHelper {
 
     public static final String BUILD_GRADLE = "build.gradle";
     public static final String BUILD_GRADLE_KTS = "build.gradle.kts";
@@ -123,36 +123,6 @@ public class GradleHelper {
         }
         return Files.exists(root.resolve(BUILD_GRADLE))
                 || Files.exists(root.resolve(BUILD_GRADLE_KTS));
-    }
-
-    /**
-     * Resolves the project root directory from a (potentially nested) base path.
-     * Strips trailing {@code src/main/java} and {@code src/test/java} segments, then
-     * falls back to the parent directory when the resolved path does not exist.
-     *
-     * @param basePath the base path to resolve
-     * @return the project root {@link Path}, or {@code null} when it cannot be determined
-     */
-    static Path findProjectRoot(String basePath) {
-        if (basePath == null) {
-            return null;
-        }
-        Path p;
-        if (basePath.contains("src/main/java")) {
-            p = Paths.get(basePath.replace("/src/main/java", ""));
-        } else if (basePath.contains("src/test/java")) {
-            p = Paths.get(basePath.replace("/src/test/java", ""));
-        } else {
-            p = Paths.get(basePath);
-        }
-
-        if (!p.toFile().exists()) {
-            Path parent = p.getParent();
-            if (parent != null) {
-                p = parent;
-            }
-        }
-        return p;
     }
 
     // -------------------------------------------------------------------------
@@ -271,7 +241,7 @@ public class GradleHelper {
         if (m.find()) {
             String versionStr = m.group(1) != null ? m.group(1) : m.group(2);
             if (versionStr != null) {
-                int version = MavenHelper.parseJavaVersion(versionStr);
+                int version = parseJavaVersion(versionStr);
                 if (version > 0) {
                     return version;
                 }

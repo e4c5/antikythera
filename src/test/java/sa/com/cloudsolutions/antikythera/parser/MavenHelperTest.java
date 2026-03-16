@@ -22,14 +22,14 @@ class MavenHelperTest {
         "8, 8"
     })
     void testParseJavaVersion(String input, int expected) {
-        assertEquals(expected, MavenHelper.parseJavaVersion(input));
+        assertEquals(expected, BuildHelper.parseJavaVersion(input));
     }
 
     @Test
     void testParseJavaVersionInvalid() {
-        assertEquals(-1, MavenHelper.parseJavaVersion(null));
-        assertEquals(-1, MavenHelper.parseJavaVersion(""));
-        assertEquals(-1, MavenHelper.parseJavaVersion("abc"));
+        assertEquals(-1, BuildHelper.parseJavaVersion(null));
+        assertEquals(-1, BuildHelper.parseJavaVersion(""));
+        assertEquals(-1, BuildHelper.parseJavaVersion("abc"));
     }
 
     @Test

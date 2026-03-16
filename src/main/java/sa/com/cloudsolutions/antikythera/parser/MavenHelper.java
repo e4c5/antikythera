@@ -11,14 +11,10 @@ import sa.com.cloudsolutions.antikythera.configuration.Settings;
 import sa.com.cloudsolutions.antikythera.exception.AntikytheraException;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +27,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MavenHelper {
+public class MavenHelper extends BuildHelper {
     public static final String POM_XML = "pom.xml";
     private static final Logger logger = LoggerFactory.getLogger(MavenHelper.class);
     private static final Map<String, Artifact> artifacts = new HashMap<>();
@@ -107,14 +103,8 @@ public class MavenHelper {
      */
     public Model readPomFile() throws IOException, XmlPullParserException {
         String basePath = Settings.getBasePath();
-        Path p = null;
-        if (basePath.contains("src/main/java")) {
-            p = Paths.get(basePath.replace("/src/main/java", ""), POM_XML);
-        } else if (basePath.contains("src/test/java")) {
-            p = Paths.get(basePath.replace("/src/test/java", ""), POM_XML);
-        } else {
-            p = Paths.get(basePath, POM_XML);
-        }
+        Path root = BuildHelper.findProjectRoot(basePath);
+        Path p = root != null ? root.resolve(POM_XML) : Paths.get(basePath, POM_XML);
 
         // Parent fallback logic from PomUtils
         if (!p.toFile().exists()) {
@@ -248,32 +238,6 @@ public class MavenHelper {
             MavenXpp3Writer writer = new MavenXpp3Writer();
             writer.write(new FileWriter(destinationPath.toFile()), templateModel);
         }
-    }
-
-    /**
-     * Copy a template file to the specified path
-     *
-     * @param filename the name of the template file to copy
-     * @param subPath  the path components
-     * @throws IOException thrown if the copy operation failed
-     */
-    public String copyTemplate(String filename, String... subPath) throws IOException {
-        String outputPath = Settings.getOutputPath();
-        if (outputPath != null) {
-            Path destinationPath = Path.of(outputPath, subPath);     // Path where template file should be copied into
-            Files.createDirectories(destinationPath);
-            String name = destinationPath + File.separator + filename;
-            try (InputStream sourceStream = getClass().getClassLoader().getResourceAsStream("templates/" + filename);
-                 FileOutputStream destStream = new FileOutputStream(name);
-                 FileChannel destChannel = destStream.getChannel()) {
-                if (sourceStream == null) {
-                    throw new IOException("Template file not found");
-                }
-                destChannel.transferFrom(Channels.newChannel(sourceStream), 0, Long.MAX_VALUE);
-            }
-            return name;
-        }
-        return null;
     }
 
     /**
@@ -486,22 +450,15 @@ public class MavenHelper {
     /**
      * Parses a Java version string into an integer.
      * Handles both modern format (e.g., "17") and legacy format (e.g., "1.8").
+     * Delegates to {@link BuildHelper#parseJavaVersion(String)}.
      *
      * @param version the version string
      * @return the version as an integer, or -1 if parsing fails
+     * @deprecated Use {@link BuildHelper#parseJavaVersion(String)} directly.
      */
+    @Deprecated
     static int parseJavaVersion(String version) {
-        if (version == null || version.isEmpty()) {
-            return -1;
-        }
-        try {
-            if (version.startsWith("1.")) {
-                return Integer.parseInt(version.substring(2));
-            }
-            return Integer.parseInt(version);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
+        return BuildHelper.parseJavaVersion(version);
     }
 
     static class Artifact {
