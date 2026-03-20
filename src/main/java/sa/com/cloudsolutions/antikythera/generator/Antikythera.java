@@ -116,12 +116,15 @@ public class Antikythera {
         String testPath = PACKAGE_PATH.replace("main", "test");
         if (mavenHelper == null) {
             mavenHelper = new MavenHelper();
-            if (!GradleHelper.isGradleProject()) {
-                try {
+            try {
+                if (!GradleHelper.isGradleProject() || Settings.getArtifacts().length > 0) {
                     mavenHelper.readPomFile();
-                } catch (Exception e) {
-                    logger.debug("Could not read POM file; will use template only: {}", e.getMessage());
                 }
+            } catch (Exception e) {
+                if (Settings.getArtifacts().length > 0) {
+                    throw new AntikytheraException("Could not read POM file needed to process artifact_ids", e);
+                }
+                logger.debug("Could not read POM file; will use template only: {}", e.getMessage());
             }
         }
         mavenHelper.copyPom();

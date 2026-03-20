@@ -104,7 +104,14 @@ public class MavenHelper extends BuildHelper {
     public Model readPomFile() throws IOException, XmlPullParserException {
         String basePath = Settings.getBasePath();
         Path root = BuildHelper.findProjectRoot(basePath);
-        Path p = root != null ? root.resolve(POM_XML) : Paths.get(basePath, POM_XML);
+        Path p;
+        if (root != null) {
+            p = root.resolve(POM_XML);
+        } else if (basePath != null) {
+            p = Paths.get(basePath, POM_XML);
+        } else {
+            throw new IOException("Base path is not configured");
+        }
 
         // Parent fallback logic from PomUtils
         if (!p.toFile().exists()) {

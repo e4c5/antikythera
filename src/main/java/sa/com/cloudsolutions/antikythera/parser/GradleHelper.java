@@ -159,7 +159,7 @@ public class GradleHelper extends BuildHelper {
      */
     public void readBuildFile(Path p) throws IOException {
         buildFilePath = p.toAbsolutePath();
-        buildFileContent = new String(Files.readAllBytes(p));
+        buildFileContent = new String(Files.readAllBytes(p), java.nio.charset.StandardCharsets.UTF_8);
         parseDependencies();
     }
 

@@ -46,11 +46,14 @@ public abstract class BuildHelper {
         if (basePath == null) {
             return null;
         }
+        String normalized = basePath.replace('\\', '/');
         Path p;
-        if (basePath.contains("src/main/java")) {
-            p = Paths.get(basePath.replace("/src/main/java", ""));
-        } else if (basePath.contains("src/test/java")) {
-            p = Paths.get(basePath.replace("/src/test/java", ""));
+        int mainIdx = normalized.indexOf("/src/main/java");
+        int testIdx = normalized.indexOf("/src/test/java");
+        if (mainIdx >= 0) {
+            p = Paths.get(normalized.substring(0, mainIdx));
+        } else if (testIdx >= 0) {
+            p = Paths.get(normalized.substring(0, testIdx));
         } else {
             p = Paths.get(basePath);
         }
