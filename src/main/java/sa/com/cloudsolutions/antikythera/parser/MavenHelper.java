@@ -464,7 +464,7 @@ public class MavenHelper extends BuildHelper {
      * @deprecated Use {@link BuildHelper#parseJavaVersion(String)} directly.
      */
     @Deprecated
-    static int parseJavaVersion(String version) {
+    public static int parseJavaVersion(String version) {
         return BuildHelper.parseJavaVersion(version);
     }
 
