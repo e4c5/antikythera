@@ -161,7 +161,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>3.4.11</version>
+            <version>3.4.13</version>
         </dependency>
 
         <!-- Jakarta Persistence API for compile-time annotations -->
